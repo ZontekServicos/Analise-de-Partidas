@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+*.tsbuildinfo
+
+# Environment variables
+.env*
+!.env.example
+!**/.env.example
+
+# Logs
+*.log
+npm-debug.log*
+web-vite.err.log
+web-vite.out.log
+
+# Prisma
+prisma/*.db
+prisma/*.db-journal
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test / coverage
+coverage/
+
+# Tool caches
+.cache/
+.vite/

@@ -1,0 +1,322 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  ANALYST
+  VIEWER
+}
+
+enum MatchStatus {
+  SCHEDULED
+  IN_PROGRESS
+  FINISHED
+  CANCELLED
+}
+
+enum PredictionStatus {
+  DRAFT
+  LOCKED
+  EVALUATED
+}
+
+enum CalibrationStatus {
+  PENDING
+  APPLIED
+  REJECTED
+}
+
+enum CompetitionType {
+  LEAGUE
+  CUP
+  INTERNATIONAL_CUP
+  QUALIFIERS
+  FRIENDLY
+  OTHER
+}
+
+enum TeamType {
+  CLUB
+  NATIONAL_TEAM
+}
+
+model User {
+  id           String       @id @default(uuid())
+  name         String
+  email        String       @unique
+  passwordHash String?
+  role         UserRole     @default(ANALYST)
+  predictions  Prediction[]
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+}
+
+model Competition {
+  id              String          @id @default(uuid())
+  name            String
+  slug            String          @unique
+  type            CompetitionType
+  country         String?
+  confederation   String?
+  isInternational Boolean         @default(false)
+  seasons         Season[]
+  matches         Match[]
+  teamStats       TeamStats[]
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([type])
+  @@index([country])
+}
+
+model Season {
+  id            String      @id @default(uuid())
+  competitionId String
+  competition   Competition @relation(fields: [competitionId], references: [id])
+  name          String
+  startDate     DateTime
+  endDate       DateTime?
+  isCurrent     Boolean     @default(false)
+  matches       Match[]
+  teamStats     TeamStats[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@unique([competitionId, name])
+  @@index([competitionId])
+  @@index([isCurrent])
+}
+
+model Team {
+  id            String      @id @default(uuid())
+  name          String      @unique
+  teamType      TeamType    @default(NATIONAL_TEAM)
+  fifaCode      String?     @unique
+  confederation String?
+  worldRanking  Int?
+  country       String?
+  city          String?
+  foundedYear   Int?
+  externalId    String?     @unique
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  homeMatches   Match[]     @relation("HomeTeamMatches")
+  awayMatches   Match[]     @relation("AwayTeamMatches")
+  stats         TeamStats[]
+
+  @@index([teamType])
+  @@index([country])
+}
+
+model Match {
+  id             String       @id @default(uuid())
+  competition    String
+  competitionId  String?
+  competitionRef Competition? @relation(fields: [competitionId], references: [id])
+  seasonId       String?
+  season         Season?      @relation(fields: [seasonId], references: [id])
+  stage          String?
+  round          String?
+  groupName      String?
+  venue          String?
+  city           String?
+  startsAt       DateTime
+  neutralField   Boolean      @default(true)
+  status         MatchStatus  @default(SCHEDULED)
+  homeTeamId     String
+  awayTeamId     String
+  homeTeam       Team         @relation("HomeTeamMatches", fields: [homeTeamId], references: [id])
+  awayTeam       Team         @relation("AwayTeamMatches", fields: [awayTeamId], references: [id])
+  predictions    Prediction[]
+  result         MatchResult?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([startsAt])
+  @@index([status])
+  @@index([homeTeamId])
+  @@index([awayTeamId])
+  @@index([competitionId])
+  @@index([seasonId])
+}
+
+model TeamStats {
+  id                   String       @id @default(uuid())
+  teamId               String
+  team                 Team         @relation(fields: [teamId], references: [id])
+  competitionId        String?
+  competition          Competition? @relation(fields: [competitionId], references: [id])
+  seasonId             String?
+  season               Season?      @relation(fields: [seasonId], references: [id])
+  referenceDate        DateTime
+  matchesPlayed        Int          @default(0)
+  wins                 Int          @default(0)
+  draws                Int          @default(0)
+  losses               Int          @default(0)
+  goalsFor             Int          @default(0)
+  goalsAgainst         Int          @default(0)
+  xG                   Float        @default(0)
+  xGA                  Float        @default(0)
+  shotsPerGame         Float        @default(0)
+  shotsAgainstPerGame  Float        @default(0)
+  possessionAvg        Float        @default(0)
+  recentFormScore      Float        @default(0)
+  attackStrength       Float        @default(0)
+  defenseStrength      Float        @default(0)
+  injuryImpact         Float        @default(0)
+  lineupStrength       Float        @default(0)
+  motivationScore      Float        @default(0)
+  matchImportanceScore Float        @default(0)
+
+  // Forma recente ponderada (bloco recentPerformance)
+  recentMatchesCount Int   @default(0)
+  recentWins         Int   @default(0)
+  recentDraws        Int   @default(0)
+  recentLosses       Int   @default(0)
+  recentGoalsFor     Int   @default(0)
+  recentGoalsAgainst Int   @default(0)
+  recentXG           Float @default(0)
+  recentXGA          Float @default(0)
+
+  // Eficiencia ofensiva (bloco offensiveEfficiency)
+  shotsOnTargetPerGame       Float @default(0)
+  bigChancesPerGame          Float @default(0)
+  bigChancesConvertedPerGame Float @default(0)
+
+  // Solidez defensiva (bloco defensiveSolidity)
+  cleanSheets                 Int   @default(0)
+  shotsOnTargetAgainstPerGame Float @default(0)
+  bigChancesConcededPerGame   Float @default(0)
+
+  // Forca dos adversarios enfrentados (bloco opponentStrength)
+  opponentStrengthScore Float @default(0)
+
+  // Disponibilidade do elenco (bloco squadStrength, junto com injuryImpact/lineupStrength)
+  suspendedPlayersImpact Float @default(0)
+  keyPlayersAvailability Float @default(100)
+
+  // Descanso e desgaste fisico (bloco physicalCondition)
+  restDays     Int   @default(7)
+  fatigueScore Float @default(0)
+  travelImpact Float @default(0)
+
+  // Disciplina (bloco disciplineScore, peso baixo no motor)
+  yellowCardsPerGame Float @default(0)
+  redCardsPerGame    Float @default(0)
+  foulsPerGame       Float @default(0)
+
+  // Bolas paradas (bloco setPieceStrength)
+  setPieceGoalsFor     Int   @default(0)
+  setPieceGoalsAgainst Int   @default(0)
+  setPieceThreatScore  Float @default(0)
+
+  // Experiencia competitiva (bloco competitiveExperience, dados manuais nesta fase)
+  tournamentExperienceScore Float @default(0)
+  knockoutExperienceScore   Float @default(0)
+  pressureHandlingScore     Float @default(0)
+
+  // Contexto da partida (bloco matchContext, junto com motivationScore/matchImportanceScore)
+  mustWinScore               Float @default(0)
+  qualificationPressureScore Float @default(0)
+
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([teamId])
+  @@index([referenceDate])
+  @@index([competitionId])
+  @@index([seasonId])
+  @@index([teamId, competitionId, seasonId])
+}
+
+model Prediction {
+  id                 String             @id @default(uuid())
+  matchId            String
+  match              Match              @relation(fields: [matchId], references: [id])
+  createdByUserId    String?
+  createdByUser      User?              @relation(fields: [createdByUserId], references: [id])
+  modelVersion       String
+  status             PredictionStatus   @default(LOCKED)
+  homeWinProbability Float
+  drawProbability    Float
+  awayWinProbability Float
+  predictedHomeGoals Float?
+  predictedAwayGoals Float?
+  confidenceScore    Float?
+  evaluatedAt        DateTime?
+  errorScore         Float?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  factors            PredictionFactor[]
+
+  @@index([matchId])
+  @@index([modelVersion])
+  @@index([status])
+}
+
+model PredictionFactor {
+  id              String     @id @default(uuid())
+  predictionId    String
+  prediction      Prediction @relation(fields: [predictionId], references: [id], onDelete: Cascade)
+  factorKey       String
+  rawValue        Float
+  normalizedValue Float
+  weight          Float
+  contribution    Float
+  metadata        Json?
+  createdAt       DateTime   @default(now())
+
+  @@index([predictionId])
+  @@index([factorKey])
+}
+
+model MatchResult {
+  id               String    @id @default(uuid())
+  matchId          String    @unique
+  match            Match     @relation(fields: [matchId], references: [id])
+  homeGoals        Int
+  awayGoals        Int
+  homePenaltyGoals Int?
+  awayPenaltyGoals Int?
+  resultSource     String?
+  confirmedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
+
+model ModelWeight {
+  id           String   @id @default(uuid())
+  modelVersion String
+  factorKey    String
+  weight       Float
+  description  String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([modelVersion, factorKey])
+  @@index([modelVersion])
+  @@index([isActive])
+}
+
+model ModelCalibrationRun {
+  id                 String            @id @default(uuid())
+  sourceModelVersion String
+  targetModelVersion String?
+  status             CalibrationStatus @default(PENDING)
+  matchesEvaluated   Int               @default(0)
+  averageErrorBefore Float?
+  averageErrorAfter  Float?
+  analysisSummary    Json?
+  factorSuggestions  Json?
+  notes              String?
+  createdAt          DateTime          @default(now())
+  appliedAt          DateTime?
+}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 
+import { apiConfigurationError } from "../api/http";
 import type { Competition } from "../api/competitions";
 import { listCompetitions } from "../api/competitions";
 import type { Match } from "../api/matches";
@@ -35,6 +36,7 @@ const TEAM_TYPE_OPTIONS: Array<{ value: "" | TeamType; label: string }> = [
 
 export function Dashboard() {
   const [matches, setMatches] = useState<Match[]>([]);
+  const [matchesState, setMatchesState] = useState<"loading" | "error" | "empty" | "success">("loading");
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
   const [matchReport, setMatchReport] = useState<MatchReportType | null>(null);
   const [modelPerformance, setModelPerformance] = useState<ModelPerformanceType | null>(null);
@@ -53,13 +55,22 @@ export function Dashboard() {
   const [status, setStatus] = useState("");
 
   const loadMatches = async () => {
-    const data = await listMatches({
-      competitionId: competitionId || undefined,
-      seasonId: seasonId || undefined,
-      teamId: teamId || undefined,
-      status: status || undefined
-    });
-    setMatches(data);
+    setMatchesState("loading");
+
+    try {
+      const data = await listMatches({
+        competitionId: competitionId || undefined,
+        seasonId: seasonId || undefined,
+        teamId: teamId || undefined,
+        status: status || undefined
+      });
+      setMatches(data);
+      setMatchesState(data.length === 0 ? "empty" : "success");
+    } catch (error) {
+      setMatches([]);
+      setMatchesState("error");
+      throw error;
+    }
   };
 
   const loadPerformance = async () => {
@@ -73,7 +84,7 @@ export function Dashboard() {
       return;
     }
 
-    setMessage("Erro inesperado ao executar acao.");
+    setMessage(error instanceof Error ? error.message : "Erro inesperado ao executar ação.");
   };
 
   const runAction = async (action: () => Promise<void>) => {
@@ -145,6 +156,12 @@ export function Dashboard() {
   };
 
   useEffect(() => {
+    if (apiConfigurationError) {
+      setMatchesState("error");
+      setMessage(apiConfigurationError);
+      return;
+    }
+
     runAction(async () => {
       const [competitionsData] = await Promise.all([listCompetitions(), loadPerformance()]);
       setCompetitions(competitionsData);
@@ -153,6 +170,8 @@ export function Dashboard() {
   }, []);
 
   useEffect(() => {
+    if (apiConfigurationError) return;
+
     if (!competitionId) {
       setSeasons([]);
       return;
@@ -162,11 +181,15 @@ export function Dashboard() {
   }, [competitionId]);
 
   useEffect(() => {
+    if (apiConfigurationError) return;
+
     listTeams({ teamType: teamType || undefined }).then(setTeams).catch(showError);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [teamType]);
 
   useEffect(() => {
+    if (apiConfigurationError) return;
+
     runAction(loadMatches);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [competitionId, seasonId, teamId, status]);
@@ -255,7 +278,13 @@ export function Dashboard() {
           ) : null}
 
           <div className="grid gap-4">
-            {matches.length === 0 ? (
+            {matchesState === "loading" ? (
+              <p className="text-sm text-slate-600">Carregando partidas...</p>
+            ) : matchesState === "error" ? (
+              <p className="rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                Não foi possível carregar as partidas.
+              </p>
+            ) : matchesState === "empty" ? (
               <p className="text-sm text-slate-600">Nenhuma partida encontrada para os filtros selecionados.</p>
             ) : (
               matches.map((match) => (

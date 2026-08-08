@@ -1,4 +1,4 @@
-import { http, type ApiResponse } from "./http";
+import { getApiArrayData, http, type ApiResponse } from "./http";
 import type { Competition } from "./competitions";
 import type { Season } from "./seasons";
 
@@ -38,5 +38,5 @@ export type ListMatchesQuery = {
 
 export async function listMatches(query: ListMatchesQuery = {}) {
   const response = await http.get<ApiResponse<Match[]>>("/matches", { params: query });
-  return response.data.data;
+  return getApiArrayData(response, "partidas");
 }

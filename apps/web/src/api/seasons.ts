@@ -1,4 +1,4 @@
-import { http, type ApiResponse } from "./http";
+import { getApiArrayData, http, type ApiResponse } from "./http";
 import type { Competition } from "./competitions";
 
 export type Season = {
@@ -18,5 +18,5 @@ export type ListSeasonsQuery = {
 
 export async function listSeasons(query: ListSeasonsQuery = {}) {
   const response = await http.get<ApiResponse<Season[]>>("/seasons", { params: query });
-  return response.data.data;
+  return getApiArrayData(response, "temporadas");
 }

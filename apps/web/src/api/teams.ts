@@ -1,4 +1,4 @@
-import { http, type ApiResponse } from "./http";
+import { getApiArrayData, http, type ApiResponse } from "./http";
 
 export type TeamType = "CLUB" | "NATIONAL_TEAM";
 
@@ -21,5 +21,5 @@ export type ListTeamsQuery = {
 
 export async function listTeams(query: ListTeamsQuery = {}) {
   const response = await http.get<ApiResponse<Team[]>>("/teams", { params: query });
-  return response.data.data;
+  return getApiArrayData(response, "times");
 }

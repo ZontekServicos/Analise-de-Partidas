@@ -45,8 +45,8 @@ export function MatchCard({
             {match.season ? ` · ${match.season.name}` : ""}
           </p>
           <h2 className="mt-1 flex items-center gap-2 text-lg font-semibold text-slate-950">
-            <TeamBadge name={match.homeTeam.name} /> {match.homeTeam.name} x {match.awayTeam.name}{" "}
-            <TeamBadge name={match.awayTeam.name} />
+            <TeamBadge logoUrl={match.homeTeam.crestUrl} name={match.homeTeam.name} /> {match.homeTeam.name} x{" "}
+            {match.awayTeam.name} <TeamBadge logoUrl={match.awayTeam.crestUrl} name={match.awayTeam.name} />
           </h2>
           <p className="mt-1 text-sm text-slate-600">
             {match.round ?? match.stage ?? "Etapa nao definida"} · {new Date(match.startsAt).toLocaleString("pt-BR")}

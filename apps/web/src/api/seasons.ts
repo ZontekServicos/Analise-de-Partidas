@@ -17,6 +17,6 @@ export type ListSeasonsQuery = {
 };
 
 export async function listSeasons(query: ListSeasonsQuery = {}) {
-  const response = await http.get<ApiResponse<Season[]>>("/seasons", { params: query });
+  const response = await http.get<ApiResponse<Season[]>>("/api/seasons", { params: query });
   return getApiArrayData(response, "temporadas");
 }

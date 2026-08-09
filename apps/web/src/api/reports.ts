@@ -61,11 +61,11 @@ export type ModelPerformance = Omit<ModelVersionPerformance, "modelVersion"> & {
 };
 
 export async function getMatchReport(matchId: string) {
-  const response = await http.get<ApiResponse<MatchReport>>(`/reports/match/${matchId}`);
+  const response = await http.get<ApiResponse<MatchReport>>(`/api/reports/match/${matchId}`);
   return response.data.data;
 }
 
 export async function getModelPerformance() {
-  const response = await http.get<ApiResponse<ModelPerformance>>("/reports/model-performance");
+  const response = await http.get<ApiResponse<ModelPerformance>>("/api/reports/model-performance");
   return response.data.data;
 }

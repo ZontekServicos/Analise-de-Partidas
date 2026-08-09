@@ -13,7 +13,7 @@ export type CalibrationRun = {
 };
 
 export async function runModelCalibration() {
-  const response = await http.post<ApiResponse<CalibrationRun>>("/model-calibration/run", {
+  const response = await http.post<ApiResponse<CalibrationRun>>("/api/model-calibration/run", {
     sourceModelVersion: "v1",
     targetModelVersion: "v1.1",
     highContributionThreshold: 0.03,

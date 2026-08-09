@@ -1,6 +1,6 @@
 import { getApiArrayData, http, type ApiResponse } from "./http";
 
-export type TeamType = "CLUB" | "NATIONAL_TEAM";
+export type TeamType = "CLUB" | "NATIONAL_TEAM" | "UNKNOWN";
 
 export type Team = {
   id: string;
@@ -11,6 +11,7 @@ export type Team = {
   worldRanking?: number | null;
   country?: string | null;
   city?: string | null;
+  crestUrl?: string | null;
 };
 
 export type ListTeamsQuery = {
@@ -20,6 +21,6 @@ export type ListTeamsQuery = {
 };
 
 export async function listTeams(query: ListTeamsQuery = {}) {
-  const response = await http.get<ApiResponse<Team[]>>("/teams", { params: query });
+  const response = await http.get<ApiResponse<Team[]>>("/api/teams", { params: query });
   return getApiArrayData(response, "times");
 }

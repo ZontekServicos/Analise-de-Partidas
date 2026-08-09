@@ -44,6 +44,7 @@ enum CompetitionType {
 enum TeamType {
   CLUB
   NATIONAL_TEAM
+  UNKNOWN
 }
 
 model User {
@@ -58,86 +59,98 @@ model User {
 }
 
 model Competition {
-  id              String          @id @default(uuid())
-  name            String
-  slug            String          @unique
-  type            CompetitionType
-  country         String?
-  confederation   String?
-  isInternational Boolean         @default(false)
-  seasons         Season[]
-  matches         Match[]
-  teamStats       TeamStats[]
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  id               String          @id @default(uuid())
+  name             String
+  slug             String          @unique
+  type             CompetitionType
+  country          String?
+  confederation    String?
+  isInternational  Boolean         @default(false)
+  externalId       String?
+  externalProvider String?
+  seasons          Season[]
+  matches          Match[]
+  teamStats        TeamStats[]
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
 
+  @@unique([externalProvider, externalId])
   @@index([type])
   @@index([country])
 }
 
 model Season {
-  id            String      @id @default(uuid())
-  competitionId String
-  competition   Competition @relation(fields: [competitionId], references: [id])
-  name          String
-  startDate     DateTime
-  endDate       DateTime?
-  isCurrent     Boolean     @default(false)
-  matches       Match[]
-  teamStats     TeamStats[]
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  id               String      @id @default(uuid())
+  competitionId    String
+  competition      Competition @relation(fields: [competitionId], references: [id])
+  name             String
+  startDate        DateTime
+  endDate          DateTime?
+  isCurrent        Boolean     @default(false)
+  externalId       String?
+  externalProvider String?
+  matches          Match[]
+  teamStats        TeamStats[]
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
 
   @@unique([competitionId, name])
+  @@unique([externalProvider, externalId])
   @@index([competitionId])
   @@index([isCurrent])
 }
 
 model Team {
-  id            String      @id @default(uuid())
-  name          String      @unique
-  teamType      TeamType    @default(NATIONAL_TEAM)
-  fifaCode      String?     @unique
-  confederation String?
-  worldRanking  Int?
-  country       String?
-  city          String?
-  foundedYear   Int?
-  externalId    String?     @unique
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  homeMatches   Match[]     @relation("HomeTeamMatches")
-  awayMatches   Match[]     @relation("AwayTeamMatches")
-  stats         TeamStats[]
+  id               String      @id @default(uuid())
+  name             String
+  teamType         TeamType    @default(NATIONAL_TEAM)
+  fifaCode         String?     @unique
+  confederation    String?
+  worldRanking     Int?
+  country          String?
+  city             String?
+  foundedYear      Int?
+  crestUrl         String?
+  externalId       String?
+  externalProvider String?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  homeMatches      Match[]     @relation("HomeTeamMatches")
+  awayMatches      Match[]     @relation("AwayTeamMatches")
+  stats            TeamStats[]
 
+  @@unique([externalProvider, externalId])
   @@index([teamType])
   @@index([country])
 }
 
 model Match {
-  id             String       @id @default(uuid())
-  competition    String
-  competitionId  String?
-  competitionRef Competition? @relation(fields: [competitionId], references: [id])
-  seasonId       String?
-  season         Season?      @relation(fields: [seasonId], references: [id])
-  stage          String?
-  round          String?
-  groupName      String?
-  venue          String?
-  city           String?
-  startsAt       DateTime
-  neutralField   Boolean      @default(true)
-  status         MatchStatus  @default(SCHEDULED)
-  homeTeamId     String
-  awayTeamId     String
-  homeTeam       Team         @relation("HomeTeamMatches", fields: [homeTeamId], references: [id])
-  awayTeam       Team         @relation("AwayTeamMatches", fields: [awayTeamId], references: [id])
-  predictions    Prediction[]
-  result         MatchResult?
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  id               String       @id @default(uuid())
+  competition      String
+  competitionId    String?
+  competitionRef   Competition? @relation(fields: [competitionId], references: [id])
+  seasonId         String?
+  season           Season?      @relation(fields: [seasonId], references: [id])
+  stage            String?
+  round            String?
+  groupName        String?
+  venue            String?
+  city             String?
+  startsAt         DateTime
+  neutralField     Boolean      @default(true)
+  status           MatchStatus  @default(SCHEDULED)
+  homeTeamId       String
+  awayTeamId       String
+  homeTeam         Team         @relation("HomeTeamMatches", fields: [homeTeamId], references: [id])
+  awayTeam         Team         @relation("AwayTeamMatches", fields: [awayTeamId], references: [id])
+  predictions      Prediction[]
+  result           MatchResult?
+  externalId       String?
+  externalProvider String?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
 
+  @@unique([externalProvider, externalId])
   @@index([startsAt])
   @@index([status])
   @@index([homeTeamId])

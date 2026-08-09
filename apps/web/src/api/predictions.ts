@@ -26,6 +26,6 @@ export type Prediction = {
 };
 
 export async function generatePrediction(matchId: string) {
-  const response = await http.post<ApiResponse<Prediction>>(`/predictions/generate/${matchId}`);
+  const response = await http.post<ApiResponse<Prediction>>(`/api/predictions/generate/${matchId}`);
   return response.data.data;
 }

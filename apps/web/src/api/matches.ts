@@ -8,6 +8,7 @@ export type TeamSummary = {
   fifaCode?: string | null;
   confederation?: string | null;
   worldRanking?: number | null;
+  crestUrl?: string | null;
 };
 
 export type Match = {
@@ -37,6 +38,6 @@ export type ListMatchesQuery = {
 };
 
 export async function listMatches(query: ListMatchesQuery = {}) {
-  const response = await http.get<ApiResponse<Match[]>>("/matches", { params: query });
+  const response = await http.get<ApiResponse<Match[]>>("/api/matches", { params: query });
   return getApiArrayData(response, "partidas");
 }

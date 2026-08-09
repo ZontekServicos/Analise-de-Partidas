@@ -23,7 +23,8 @@ const teamSummarySelect = {
   name: true,
   fifaCode: true,
   confederation: true,
-  worldRanking: true
+  worldRanking: true,
+  crestUrl: true
 };
 
 const resultInclude = {
@@ -113,9 +114,16 @@ const findResultOrFail = async (id: string) => {
   return result;
 };
 
-const evaluatePredictionsForMatch = async (matchId: string, result: MatchResult) => {
+export const evaluatePredictionsForMatch = async (
+  matchId: string,
+  result: MatchResult,
+  options: { onlyPending?: boolean } = {}
+) => {
   const predictions = await prisma.prediction.findMany({
-    where: { matchId },
+    where: {
+      matchId,
+      ...(options.onlyPending ? { status: { not: PredictionStatus.EVALUATED } } : {})
+    },
     orderBy: {
       createdAt: "desc"
     }

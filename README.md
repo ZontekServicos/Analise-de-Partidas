@@ -45,6 +45,36 @@ npm run dev
 npm run build
 ```
 
+## Integração football-data.org (fonte de dados)
+
+A football-data.org é só uma **fonte de dados** — nunca substitui o Probability Engine v2, e o frontend nunca fala com ela diretamente:
+
+```text
+football-data.org → Integration Client → Mapper → Data Sync → PostgreSQL → Probability Engine v2 → Frontend
+```
+
+Variáveis (`apps/server/.env`, nunca no frontend): `FOOTBALL_DATA_API_KEY`, `FOOTBALL_DATA_BASE_URL`, `DATA_SYNC_SECRET`.
+
+Fluxo manual recomendado (nenhum passo é automático, não há cron):
+
+```bash
+# 1. Sincronizar competições disponíveis
+curl -X POST http://localhost:3000/api/data-sync/competitions -H "X-Data-Sync-Secret: $DATA_SYNC_SECRET"
+
+# 2. Sincronizar os times de uma competição (externalId da football-data.org, ex.: 2021 = Premier League)
+curl -X POST http://localhost:3000/api/data-sync/competitions/2021/teams -H "X-Data-Sync-Secret: $DATA_SYNC_SECRET"
+
+# 3. Sincronizar as partidas dessa competição
+curl -X POST http://localhost:3000/api/data-sync/competitions/2021/matches -H "X-Data-Sync-Secret: $DATA_SYNC_SECRET"
+
+# 4. Ver quota/saúde da integração (não gasta chamada nova)
+curl http://localhost:3000/api/integrations/football-data/status
+```
+
+Depois disso, o Dashboard já lista as competições/temporadas/times/partidas sincronizadas, e "Gerar previsão" funciona normalmente (o motor v2 só lê o nosso banco, nunca a API externa). `TeamStats` agregados a partir do histórico real (`teamStatsAggregation.service.ts`) ainda precisam ser aplicados via código/console nesta primeira versão — não há rota HTTP dedicada para isso ainda.
+
+**Limitação conhecida**: times/competições cadastrados manualmente no seed (sem `externalId`) não são casados automaticamente com os registros sincronizados — o sync nunca usa nome como chave, então cria registros novos em vez de mesclar. Reconciliação retroativa fica para uma etapa futura.
+
 ## `packages/` (evolução futura)
 
 Ainda vazio de propósito — nesta etapa só a estrutura de monorepo foi estabilizada. Candidatos a extrair para cá mais adiante, sem pressa:
@@ -62,7 +92,7 @@ Crie dois serviços separados, ambos usando Railpack, com estas configurações:
 - Root Directory: `apps/server`
 - Build Command: `npm run build`
 - Start Command: `npm start`
-- Variáveis: `DATABASE_URL`, `CORS_ORIGIN` e, opcionalmente, `NODE_ENV=production`
+- Variáveis: `DATABASE_URL`, `CORS_ORIGIN`, opcionalmente `NODE_ENV=production`, e — só se for usar a integração football-data.org — `FOOTBALL_DATA_API_KEY`, `FOOTBALL_DATA_BASE_URL`, `DATA_SYNC_SECRET` (essas três pertencem exclusivamente a este serviço, nunca ao frontend)
 - Healthcheck recomendado: `/health`
 
 O build TypeScript gera `dist/server.js`, que é executado diretamente pelo script

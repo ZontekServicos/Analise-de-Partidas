@@ -5,6 +5,8 @@ import helmet from "helmet";
 import { env } from "./config/env";
 import { errorHandler } from "./middlewares/errorHandler";
 import { competitionsRoutes } from "./modules/competitions/competitions.routes";
+import { dataSyncRoutes } from "./modules/dataSync/dataSync.routes";
+import { integrationsRoutes } from "./modules/integrations/integrations.routes";
 import { matchesRoutes } from "./modules/matches/matches.routes";
 import { modelCalibrationRoutes } from "./modules/modelCalibration/modelCalibration.routes";
 import { predictionsRoutes } from "./modules/predictions/predictions.routes";
@@ -16,9 +18,10 @@ import { teamsRoutes } from "./modules/teams/teams.routes";
 
 export const app = express();
 
+app.disable("x-powered-by");
 app.use(helmet());
 app.use(cors({ origin: env.CORS_ORIGIN }));
-app.use(express.json());
+app.use(express.json({ limit: "100kb" }));
 
 app.get("/health", (_req, res) => {
   res.status(200).json({
@@ -27,8 +30,6 @@ app.get("/health", (_req, res) => {
   });
 });
 
-// Cada recurso responde tanto no path legado (compatibilidade com o frontend/testes
-// atuais) quanto sob /api/<recurso> (convencao pedida na generalizacao da plataforma).
 const resourceRoutes: Array<[string, express.Router]> = [
   ["/competitions", competitionsRoutes],
   ["/seasons", seasonsRoutes],
@@ -42,8 +43,15 @@ const resourceRoutes: Array<[string, express.Router]> = [
 ];
 
 for (const [path, router] of resourceRoutes) {
-  app.use(path, router);
   app.use(`/api${path}`, router);
 }
+
+// Rotas novas da integracao football-data.org — so no path /api, sem alias legado.
+app.use("/api/data-sync", dataSyncRoutes);
+app.use("/api/integrations", integrationsRoutes);
+
+app.use((_req, res) => {
+  res.status(404).json({ message: "Route not found" });
+});
 
 app.use(errorHandler);

@@ -6,7 +6,7 @@ import type { CreateCompetitionInput, ListCompetitionsQuery, UpdateCompetitionIn
 
 const DIACRITICS_PATTERN = new RegExp("[\\u0300-\\u036f]", "g");
 
-const slugify = (value: string) =>
+export const slugify = (value: string) =>
   value
     .normalize("NFD")
     .replace(DIACRITICS_PATTERN, "")

@@ -8,6 +8,6 @@ export type CreateResultInput = {
 };
 
 export async function createResult(input: CreateResultInput) {
-  const response = await http.post<ApiResponse<unknown>>("/results", input);
+  const response = await http.post<ApiResponse<unknown>>("/api/results", input);
   return response.data.data;
 }

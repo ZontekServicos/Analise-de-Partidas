@@ -35,7 +35,8 @@ const teamSummarySelect = {
   name: true,
   fifaCode: true,
   confederation: true,
-  worldRanking: true
+  worldRanking: true,
+  crestUrl: true
 };
 
 const round = (value: number, decimals = 4) => {

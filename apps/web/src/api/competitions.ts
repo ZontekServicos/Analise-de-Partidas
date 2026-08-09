@@ -19,6 +19,6 @@ export type ListCompetitionsQuery = {
 };
 
 export async function listCompetitions(query: ListCompetitionsQuery = {}) {
-  const response = await http.get<ApiResponse<Competition[]>>("/competitions", { params: query });
+  const response = await http.get<ApiResponse<Competition[]>>("/api/competitions", { params: query });
   return getApiArrayData(response, "competições");
 }
